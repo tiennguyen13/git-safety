@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# pre-push hook: intercepts dangerous push patterns
+# Install: cp this file to .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+# Or use the team setup script: scripts/setup-git-hooks.sh
+
+REMOTE="$1"
+URL="$2"
+
+# Read push refs from stdin
+while read LOCAL_REF LOCAL_SHA REMOTE_REF REMOTE_SHA; do
+  # Block force push to protected branches
+  PROTECTED_BRANCHES="main master develop release"
+  BRANCH=$(echo "$REMOTE_REF" | sed 's|refs/heads/||')
+
+  for PROTECTED in $PROTECTED_BRANCHES; do
+    if [ "$BRANCH" = "$PROTECTED" ]; then
+      # Check if this is a force push (non-fast-forward)
+      if [ "$REMOTE_SHA" != "0000000000000000000000000000000000000000" ]; then
+        if ! git merge-base --is-ancestor "$REMOTE_SHA" "$LOCAL_SHA" 2>/dev/null; then
+          echo ""
+          echo "❌ BLOCKED: Force push to '$PROTECTED' is not allowed."
+          echo "   This would rewrite shared history and close all open PRs."
+          echo ""
+          echo "   If you truly need this, contact your team lead."
+          echo ""
+          exit 1
+        fi
+      fi
+    fi
+  done
+done
+
+exit 0

@@ -1,0 +1,37 @@
+repos:
+  # --- Secret & sensitive file detection ---
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+        name: "🔐 Gitleaks — Detect hardcoded secrets"
+
+  # --- Block .env and common secret files from ever being committed ---
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+      - id: detect-private-key
+        name: "🔑 Detect private keys"
+      - id: check-merge-conflict
+      - id: no-commit-to-branch
+        name: "🚫 No direct commit to main/master/develop/release"
+        args: [--branch, main, --branch, master, --branch, develop, --branch, release]
+
+  # --- Custom hook: block .env files ---
+  - repo: local
+    hooks:
+      - id: block-dotenv
+        name: "🚫 Block .env files from being committed"
+        entry: bash -c 'files=$(git diff --cached --name-only | grep -E "^\.env$|^\.env\.|/\.env$|/\.env\."); if [ -n "$files" ]; then echo ""; echo "❌ ERROR: Attempting to commit .env file(s):"; echo "$files"; echo ""; echo "  These files contain secrets and must NEVER be committed."; echo "  Run: git rm --cached <file>"; echo ""; exit 1; fi'
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: warn-git-add-all
+        name: "⚠️  Warn when staging all files"
+        entry: bash -c 'staged=$(git diff --cached --name-only); sensitive=$(echo "$staged" | grep -Ei "\.(env|pem|key|p12|pfx|jks|secret)$|secrets?\.(json|yaml|yml|toml)$|credentials?"); if [ -n "$sensitive" ]; then echo ""; echo "⚠️  WARNING: Potentially sensitive files are staged:"; echo "$sensitive"; echo ""; echo "  Are you sure you want to commit these? (Ctrl+C to abort)"; sleep 3; fi'
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
