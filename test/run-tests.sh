@@ -2,8 +2,6 @@
 # test/run-tests.sh — verify that all pre-commit and pre-push hooks are working
 # Usage: bash test/run-tests.sh
 
-set -e
-
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
@@ -28,7 +26,7 @@ expect_blocked() {
   local CONTENT="$3"
 
   echo "$CONTENT" > "$FILE"
-  git add "$FILE"
+  git add --force "$FILE" 2>/dev/null
 
   if bash "$HOOK" 2>/dev/null; then
     echo -e "  ${RED}✗ FAIL${NC}: $TEST_NAME — hook should have blocked this but didn't"
@@ -48,7 +46,7 @@ expect_allowed() {
   local CONTENT="$3"
 
   echo "$CONTENT" > "$FILE"
-  git add "$FILE"
+  git add --force "$FILE" 2>/dev/null
 
   if bash "$HOOK" 2>/dev/null; then
     echo -e "  ${GREEN}✓ PASS${NC}: $TEST_NAME — correctly allowed"
