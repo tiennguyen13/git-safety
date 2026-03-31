@@ -97,6 +97,31 @@ expect_blocked \
   "test/tmp_client.go" \
   'api_key = "sk-abc123verysecretkey"'
 
+expect_blocked \
+  "Hardcoded secret_key (underscore)" \
+  "test/tmp_address.go" \
+  'const secret_key = "zMTFf8Z4z7JGDjqTrcvtxKPPme-dzdQmbkrfdRCy_AKJ"'
+
+expect_blocked \
+  "Hardcoded secretKey (camelCase)" \
+  "test/tmp_config.js" \
+  'const secretKey = "my-secret-value-123"'
+
+expect_blocked \
+  "Hardcoded SECRET_KEY (all caps)" \
+  "test/tmp_env.py" \
+  'SECRET_KEY = "django-secret-key-abc123"'
+
+expect_blocked \
+  "Hardcoded client_secret" \
+  "test/tmp_oauth.go" \
+  'clientSecret := "oauth-client-secret-xyz789"'
+
+expect_blocked \
+  "Hardcoded auth_token" \
+  "test/tmp_auth.go" \
+  'auth_token = "bearer-token-abc123xyz"'
+
 # --- Tests that should be ALLOWED ---
 expect_allowed \
   ".env.example (template, safe)" \

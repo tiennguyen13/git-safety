@@ -13,12 +13,34 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-ROOT_DIR="$(git rev-parse --show-toplevel)"
-HOOKS_SRC="$ROOT_DIR/tools/git-hooks"
+# Get the directory where this script is located (git-safety repo)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GIT_SAFETY_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# ROOT_DIR is the target repository where hooks will be installed
+ROOT_DIR="${ROOT_DIR:-$(git rev-parse --show-toplevel)}"
+
+# Validate that ROOT_DIR is a git repository
+if [ ! -d "$ROOT_DIR/.git" ]; then
+  echo -e "${RED}✗${NC} ERROR: $ROOT_DIR is not a git repository"
+  echo "  Make sure you're in a git repository or set ROOT_DIR to a valid git repo path"
+  exit 1
+fi
+
+# Hooks source is always from the git-safety repo, destination is the target repo
+HOOKS_SRC="$GIT_SAFETY_ROOT/tools/git-hooks"
 HOOKS_DEST="$ROOT_DIR/.git/hooks"
+
+# Validate that hooks source directory exists
+if [ ! -d "$HOOKS_SRC" ]; then
+  echo -e "${RED}✗${NC} ERROR: Git hooks directory not found at $HOOKS_SRC"
+  echo "  Make sure you're running this script from the git-safety repository"
+  exit 1
+fi
 
 echo ""
 echo "=== Backend Team — Git Safety Setup ==="
+echo "  Target repository: $ROOT_DIR"
 echo ""
 
 # --- 1. Install git hooks ---
@@ -35,7 +57,7 @@ done
 echo ""
 echo "▶ Checking for pre-commit framework..."
 if command -v pre-commit &>/dev/null; then
-  pre-commit install
+  (cd "$ROOT_DIR" && pre-commit install)
   echo -e "  ${GREEN}✓${NC} pre-commit framework installed (runs gitleaks on every commit)"
 else
   echo -e "  ${YELLOW}⚠${NC}  pre-commit not found. Recommended:"
@@ -49,7 +71,7 @@ echo ""
 echo "▶ Setting up git safety aliases (repo-local)..."
 
 # Alias: safe-push warns if you're about to --force --all
-git config alias.safe-push '!f() { \
+git -C "$ROOT_DIR" config alias.safe-push '!f() { \
   if echo "$@" | grep -q -- "--force"; then \
     echo ""; \
     echo "⚠️  You are about to force push. This rewrites history and CLOSES all open PRs."; \
@@ -61,7 +83,7 @@ git config alias.safe-push '!f() { \
 }; f'
 
 # Alias: check-env → shows what .env files exist and their gitignore status
-git config alias.check-env '!git ls-files --others --exclude-standard | grep -E "(^|/)\.env($|\\.)" || echo "No untracked .env files found."'
+git -C "$ROOT_DIR" config alias.check-env '!git ls-files --others --exclude-standard | grep -E "(^|/)\.env($|\\.)" || echo "No untracked .env files found."'
 
 echo -e "  ${GREEN}✓${NC} git safe-push — warns before any --force push"
 echo -e "  ${GREEN}✓${NC} git check-env — lists any untracked .env files"

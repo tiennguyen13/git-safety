@@ -84,10 +84,46 @@ Expected output:
 
 | Layer | Tool | What it stops |
 |---|---|---|
-| pre-commit hook | `tools/git-hooks/pre-commit` | `.env` files, `.pem`/`.key` files, hardcoded passwords/tokens in diff |
+| pre-commit hook | `tools/git-hooks/pre-commit` | `.env` files, `.pem`/`.key` files, hardcoded secrets (see patterns below) |
 | pre-push hook | `tools/git-hooks/pre-push` | Force push to `main`/`master`/`develop`/`release` |
 | pre-commit framework | gitleaks | Deep secret scan using regex patterns across entire diff |
 | Branch protection | GitHub settings | Ultimate backstop — cannot be bypassed with `--no-verify` |
+
+### Secret patterns detected by pre-commit hook
+
+The hook catches hardcoded secrets in various naming conventions across different languages:
+
+**Supported patterns:**
+- `password`, `db_password`, `dbPassword`, `PASSWORD` 
+- `secret`, `secret_key`, `secretKey`, `SECRET_KEY`, `client_secret`, `clientSecret`
+- `api_key`, `apiKey`, `API_KEY`, `api_secret`, `apiSecret`
+- `access_token`, `accessToken`, `ACCESS_TOKEN`
+- `private_key`, `privateKey`, `PRIVATE_KEY`
+- `auth_token`, `authToken`, `AUTH_TOKEN`
+- `jwt_secret`, `jwtSecret`, `JWT_SECRET`
+
+**Example code that will be blocked:**
+```go
+const secret_key = "abc123"           // ❌ Blocked
+var apiKey = "sk-live-123"            // ❌ Blocked  
+clientSecret := "oauth-secret"        // ❌ Blocked
+```
+
+```python
+SECRET_KEY = "django-secret-123"      # ❌ Blocked
+api_key = "prod-api-key"              # ❌ Blocked
+```
+
+```javascript
+const secretKey = "my-secret"         // ❌ Blocked
+let auth_token = "bearer-token"       // ❌ Blocked
+```
+
+**Safe alternatives that won't be blocked:**
+```go
+secret := os.Getenv("SECRET_KEY")     // ✅ Safe - uses env var
+apiKey := config.GetAPIKey()          // ✅ Safe - uses config
+```
 
 ---
 

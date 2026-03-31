@@ -32,11 +32,20 @@ if [ -n "$SECRET_FILES" ]; then
 fi
 
 # --- 3. Scan content of staged files for secret patterns ---
+# Enhanced patterns to catch various naming conventions across different languages:
+# - Underscores: secret_key, api_key, db_password
+# - CamelCase: secretKey, apiKey, dbPassword  
+# - All caps: SECRET_KEY, API_KEY, DB_PASSWORD
+# Supports: const/var/let assignments, := in Go, = in Python/JS, etc.
 PATTERNS=(
-  "password[[:space:]]*=[[:space:]]*['\"][^'\"]{4,}"
-  "secret[[:space:]]*=[[:space:]]*['\"][^'\"]{4,}"
-  "api_key[[:space:]]*=[[:space:]]*['\"][^'\"]{4,}"
-  "access_token[[:space:]]*=[[:space:]]*['\"][^'\"]{4,}"
+  "(password|PASSWORD|Password)[_a-zA-Z0-9]*.*=[[:space:]]*['\"][^'\"]{4,}"
+  "(secret|SECRET|Secret)[_a-zA-Z0-9]*.*=[[:space:]]*['\"][^'\"]{4,}"
+  "(api_key|apiKey|API_KEY|api_secret|apiSecret|API_SECRET).*=[[:space:]]*['\"][^'\"]{4,}"
+  "(access_token|accessToken|ACCESS_TOKEN).*=[[:space:]]*['\"][^'\"]{4,}"
+  "(private_key|privateKey|PRIVATE_KEY).*=[[:space:]]*['\"][^'\"]{4,}"
+  "(client_secret|clientSecret|CLIENT_SECRET).*=[[:space:]]*['\"][^'\"]{4,}"
+  "(auth_token|authToken|AUTH_TOKEN).*=[[:space:]]*['\"][^'\"]{4,}"
+  "(jwt_secret|jwtSecret|JWT_SECRET).*=[[:space:]]*['\"][^'\"]{4,}"
 )
 
 # Private key header — anchor to diff '+' prefix so variable names in source code won't match
