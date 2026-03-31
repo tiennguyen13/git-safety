@@ -39,8 +39,8 @@ PATTERNS=(
   "access_token[[:space:]]*=[[:space:]]*['\"][^'\"]{4,}"
 )
 
-# Private key header — match full PEM format to avoid false positives on code references
-PRIVATE_KEY_MATCH=$(git diff --cached -U0 | grep "^+" | grep -F "-----BEGIN" | grep -iF "PRIVATE KEY-----")
+# Private key header — anchor to diff '+' prefix so variable names in source code won't match
+PRIVATE_KEY_MATCH=$(git diff --cached -U0 | grep -E "^\+-----BEGIN [A-Z ]*PRIVATE KEY-----")
 if [ -n "$PRIVATE_KEY_MATCH" ]; then
   echo ""
   echo -e "${RED}❌ BLOCKED: Private key detected in staged diff:${NC}"
