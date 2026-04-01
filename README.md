@@ -11,8 +11,11 @@ Prevents accidental commits of `.env` files, secrets, and destructive force push
 .gitignore                # blocks .env from this repo itself
 .env.example              # safe template — copy to .env and fill in values
 
+install.sh                # standalone one-liner installer (curl | bash)
+Makefile                  # make install TARGET=… / make /abs/path / make self-install
+
 scripts/
-  setup-git-hooks.sh      # one-command setup for any repo
+  setup-git-hooks.sh      # core setup script
 
 tools/
   git-hooks/
@@ -25,23 +28,52 @@ test/
 
 ## Setup (run once per repo)
 
-**Step 1 — Clone this repo:**
+### Option A — One-liner (no clone needed)
+
+`cd` into your project root, then:
 ```bash
-git clone git@github.com:<your-org>/git-safety.git
+bash <(curl -fsSL https://raw.githubusercontent.com/tiennguyen13/git-safety/main/install.sh)
 ```
 
-**Step 2 — Install hooks into your target repo:**  
-Copy `scripts/setup-git-hooks.sh` into your repo and run it:
+Or pass the path explicitly from anywhere:
 ```bash
-bash scripts/setup-git-hooks.sh
+bash <(curl -fsSL https://raw.githubusercontent.com/tiennguyen13/git-safety/main/install.sh) /path/to/your-repo
 ```
 
-Or run it directly from this repo pointing at another repo:
+---
+
+### Option B — `make` (after cloning this repo)
+
+```bash
+git clone https://github.com/tiennguyen13/git-safety.git
+cd git-safety
+```
+
+Then use any of these forms:
+
+```bash
+# Named target
+make install TARGET=/path/to/your-repo
+
+# Absolute path as the make goal (shorthand)
+make /path/to/your-repo
+
+# Install into this repo itself
+make self-install
+```
+
+---
+
+### Option C — `ROOT_DIR` env var (original method)
+
 ```bash
 ROOT_DIR=/path/to/your-repo bash scripts/setup-git-hooks.sh
 ```
 
-**Step 3 — (Recommended) Install the pre-commit framework:**
+---
+
+### After any setup — (Recommended) Install the pre-commit framework
+
 ```bash
 brew install pre-commit       # macOS
 pre-commit install            # run inside your target repo
